@@ -5,7 +5,6 @@ import structlog
 import os.path
 import re
 from functools import partial
-from shutil import rmtree
 
 import regex
 from django.conf import settings
@@ -665,6 +664,13 @@ class Build(models.Model):
         _('Cold Storage'),
         null=True,
         help_text='Build steps stored outside the database.',
+    )
+
+    task_id = models.CharField(
+        _('Celery task id'),
+        max_length=36,
+        null=True,
+        blank=True,
     )
 
     # Managers

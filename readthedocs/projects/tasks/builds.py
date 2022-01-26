@@ -51,6 +51,7 @@ from readthedocs.doc_builder.exceptions import (
     BuildUserError,
     BuildMaxConcurrencyError,
     DuplicatedBuildError,
+    BuildCancelled,
     ProjectBuildsSkippedError,
     YAMLParseError,
 )
@@ -206,6 +207,7 @@ class UpdateDocsTask(SyncRepositoryMixin, Task):
         ProjectBuildsSkippedError,
         ConfigError,
         YAMLParseError,
+        BuildCancelled,
     )
 
     acks_late = True
@@ -221,9 +223,16 @@ class UpdateDocsTask(SyncRepositoryMixin, Task):
         def sigterm_received(*args, **kwargs):
             log.warning('SIGTERM received. Waiting for build to stop gracefully after it finishes.')
 
+        def sigint_received(*args, **kwargs):
+            log.warning('SIGINT received. Cancelling the build running.')
+            raise BuildCancelled
+
         # Do not send the SIGTERM signal to children (pip is automatically killed when
         # receives SIGTERM and make the build to fail one command and stop build)
         signal.signal(signal.SIGTERM, sigterm_received)
+
+
+        signal.signal(signal.SIGINT, sigint_received)
 
     def _check_concurrency_limit(self):
         try:
